@@ -27,7 +27,7 @@ void setup() {
   pinMode(BUZZER_PIN, OUTPUT);
   pinMode(RELAY_PIN, OUTPUT);
 
-  digitalWrite(RELAY_PIN, HIGH); // Lúc đầu mở khóa (Relay bật)
+  digitalWrite(RELAY_PIN, LOW); // Lúc đầu mở khóa (Relay bật)
 
   lcd.init();
   lcd.backlight();
@@ -70,7 +70,7 @@ void loop() {
 // Đóng cửa và tự động mở lại sau 10 giây
 void lockDoor() {
   isLocked = true;
-  digitalWrite(RELAY_PIN, LOW); // Đóng cửa (Relay tắt)
+  digitalWrite(RELAY_PIN, HIGH); // Đóng cửa (Relay tắt)
   
   lcd.clear();
   lcd.print("WELLCOME TO PARKING");
@@ -84,7 +84,7 @@ void lockDoor() {
 // Mở cửa
 void unlockDoor() {
   isLocked = false;
-  digitalWrite(RELAY_PIN, HIGH); // Mở cửa (Relay bật)
+  digitalWrite(RELAY_PIN, LOW); // Mở cửa (Relay bật)
   
   lcd.clear();
   lcd.print("SCAN PARKING CARD");
