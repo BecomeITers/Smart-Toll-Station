@@ -8,7 +8,7 @@
 #define RST_PIN  9
 #define BUZZER_PIN 6
 #define RELAY_PIN  7
-#define PIR_PIN  8  // Cảm biến chuyển động PIR
+#define PIR_PIN  8  
 
 // Khai báo đối tượng
 LiquidCrystal_I2C lcd(0x27, 16, 2);
@@ -71,7 +71,6 @@ void loop() {
   }
 }
 
-// Đóng cửa và tự động mở lại sau 10 giây
 void lockDoor() {
   isLocked = true;
   digitalWrite(RELAY_PIN, HIGH);
