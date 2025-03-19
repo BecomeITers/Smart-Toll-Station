@@ -4,25 +4,28 @@
 #include <MFRC522.h>
 
 // Định nghĩa chân kết nối
-#define SS_PIN  10
-#define RST_PIN  9
+#define SS_PIN 10
+#define RST_PIN 9
 #define BUZZER_PIN 6
-#define RELAY_PIN  7
-#define PIR_PIN  8  
+#define RELAY_PIN 7
+#define PIR_PIN 8  
 
 // Khai báo đối tượng
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 MFRC522 mfrc522(SS_PIN, RST_PIN);
 
-// UID của thẻ hợp lệ
-const String validUID = "C348A2A";
+// Danh sách thẻ hợp lệ
+byte Name1[4] = {0xC3, 0x48, 0x0A, 0x2A};
+byte Name2[4] = {0x01, 0x06, 0x78, 0x7B};
 
-// Trạng thái cửa
-bool isLocked = false; 
+// Thông tin người dùng
+String Name;
+long Number;
+bool isLocked = false;
 
 // Biến chống nhiễu cảm biến PIR
 unsigned long lastMotionTime = 0;
-const unsigned long debounceDelay = 5000; // Giảm nhiễu 5 giây
+const unsigned long debounceDelay = 5000;
 
 void setup() {
   Serial.begin(9600);
@@ -32,8 +35,7 @@ void setup() {
   pinMode(BUZZER_PIN, OUTPUT);
   pinMode(RELAY_PIN, OUTPUT);
   pinMode(PIR_PIN, INPUT);
-
-  digitalWrite(RELAY_PIN, LOW); // Ban đầu mở khóa
+  digitalWrite(RELAY_PIN, LOW);
 
   lcd.init();
   lcd.backlight();
@@ -43,56 +45,71 @@ void setup() {
   lcd.clear();
   lcd.print("SCAN YOUR TOLL CARD");
 
-  // Âm báo khởi động
   tone(BUZZER_PIN, 1000);
   delay(300);
   noTone(BUZZER_PIN);
+  Serial.println("CLEARSHEET");
+  Serial.println("LABEL,Date,Time,Name,Number");
 }
 
 void loop() {
-  // Kiểm tra quét thẻ NFC
   if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial()) {
-    String uid = getUID();
-    Serial.println("Card UID: " + uid);
-
-    if (uid == validUID) {
+    if (checkValidCard()) {
+      Serial.print("DATA,DATE,TIME," + Name);
+      Serial.print(",");
+      Serial.println(Number);
+      Serial.println("SAVEWORKBOOKAS,Names/WorkNames");
       lockDoor();
     } else {
       lcd.clear();
-      Deniedbuzz(3);
       lcd.print("! WRONG TOLL CARD !");
+      Deniedbuzz(3);
       delay(1000);
       lcd.clear();
       lcd.print("SCAN YOUR TOLL CARD");
     }
-
     mfrc522.PICC_HaltA();
     mfrc522.PCD_StopCrypto1();
   }
 }
 
+bool checkValidCard() {
+  bool isName1 = true;
+  bool isName2 = false;
+  for (byte i = 0; i < mfrc522.uid.size; i++) {
+    if (mfrc522.uid.uidByte[i] != Name1[i]) isName1 = false;
+    if (mfrc522.uid.uidByte[i] != Name2[i]) isName2 = true;
+  }
+  if (isName1) {
+    Name = "Vu Duc Thang";
+    Number = 23162095;
+    return true;
+  } else if (isName2) {
+    Name = "Nguyen Nhat Nam";
+    Number = 23162058;
+    return false;
+  }
+  return false;
+}
+
 void lockDoor() {
   isLocked = true;
   digitalWrite(RELAY_PIN, HIGH);
-
   lcd.clear();
   lcd.print("! PLEASE CONTINUE !");
   Accessbuzz(1);
 
-  Serial.println("Chờ phát hiện chuyển động...");
   unsigned long startTime = millis();
-
   while (millis() - startTime < 1000) { // Chờ tối đa 1 giây
-    if (detectMotion()) { // Nếu phát hiện chuyển động (chống nhiễu)
-      Serial.println("Phát hiện chuyển động - Mở cửa!");
-      unlockDoor();
-      return;
+      if (detectMotion()) { // Nếu phát hiện chuyển động (chống nhiễu)
+        Serial.println("Phát hiện chuyển động - Mở cửa!");
+        unlockDoor();
+        return;
+      }
+      delay(2000); // Giảm tải CPU, tránh đọc quá nhanh
     }
-    delay(2000); // Giảm tải CPU, tránh đọc quá nhanh
-  }
 }
 
-// Hàm kiểm tra chuyển động với chống nhiễu
 bool detectMotion() {
   int motionCount = 0;
   while(true) {
@@ -104,17 +121,14 @@ bool detectMotion() {
   return (motionCount > 0); 
 }
 
-// Mở cửa
 void unlockDoor() {
   isLocked = false;
   digitalWrite(RELAY_PIN, LOW);
-  
   lcd.clear();
   lcd.print("SCAN YOUR TOLL CARD");
   Deniedbuzz(3);
 }
 
-// Âm báo khi mở khóa thành công
 void Accessbuzz(int times) {
   for (int i = 0; i < times; i++) {
     tone(BUZZER_PIN, 1000);
@@ -124,7 +138,6 @@ void Accessbuzz(int times) {
   }
 }
 
-// Âm báo khi nhập sai hoặc truy cập bị từ chối
 void Deniedbuzz(int times) {
   for (int i = 0; i < times; i++) {
     tone(BUZZER_PIN, 1000);
@@ -133,13 +146,3 @@ void Deniedbuzz(int times) {
     delay(100);
   }
 }
-
-// Lấy UID của thẻ NFC
-String getUID() {
-  String uid = "";
-  for (byte i = 0; i < mfrc522.uid.size; i++) {
-    uid += String(mfrc522.uid.uidByte[i], HEX);
-  }
-  uid.toUpperCase();
-  return uid;
-}  
