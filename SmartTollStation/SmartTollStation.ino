@@ -100,7 +100,7 @@ void lockDoor() {
   Accessbuzz(1);
 
   unsigned long startTime = millis();
-  while (millis() - startTime < 1000) { // Chờ tối đa 1 giây
+  while (millis() - startTime < 5000) { // Chờ tối đa 5 giây
       if (detectMotion()) { // Nếu phát hiện chuyển động (chống nhiễu)
         Serial.println("Phát hiện chuyển động - Mở cửa!");
         unlockDoor();
