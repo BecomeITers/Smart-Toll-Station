@@ -1,3 +1,3 @@
-Hãy xem sơ đồ nối ở phần Circuits và xem ảnh cung cấp nguồn để các thiết bị hoạt động trơn tru.
+Hãy xem sơ đồ nối ở phần Circuits
 
-Sau khi nạp code xong thì hãy kill tab Arduino IDE và mở file Excel ở trên và connect thiết bị thông qua port thì sau khi quét nfc thì sẽ lưu UID trên excel.
+Trước khi nạp code, hãy đọc code tìm dòng code mà kết nối Wifi hãy đổi SSID và Password của nhà mình để Esp32 kết nối Wifi để hoạt động trơn tru khi quét rfid up lên database
