@@ -26,8 +26,6 @@ byte Name1[4] = {0xC3, 0x48, 0x0A, 0x2A};
 byte Name2[4] = {0x01, 0x06, 0x78, 0x7B};
 
 // Thông tin người dùng
-String Name;
-long Number;
 bool isLocked = false;
 
 // Cấu trúc lưu trữ thông tin người dùng
@@ -40,16 +38,16 @@ struct UserInfo {
 
 // Danh sách người dùng đã được setup sẵn (UID, tên, số điện thoại, biển số xe)
 UserInfo users[] = {
-  {"C3480A2A", "NguyenVanA", "0901234567", "51A-12345"},
-  {"A02", "NguyenVanB", "0987654321", "51B-54321"}
+  {"C3480A2A", "NguyenNhatNam", "0901234567", "51A-JQKA"},
+  {"Ha05", "NguyenHaha", "0987654321", "51B-54321"}
 };
 
 // Thông tin WiFi
-const char* ssid = "DaoThaiLan";         // Thay bằng tên WiFi của bạn
-const char* password = "nhatnam05";        // Thay bằng mật khẩu WiFi của bạn
+const char* ssid = "CauBeButChi";         // Thay bằng tên WiFi của bạn
+const char* password = "14052005";        // Thay bằng mật khẩu WiFi của bạn
 
 // URL cơ sở của Google Apps Script
-const String baseURL = "https://script.google.com/macros/s/AKfycbx4VfFk93i5z1xq-rkd-2sQozUwktgOBkMxMXUrfF36raWRG62NrU7GqTP7k7hmRt0NGA/exec";
+const String baseURL = "https://script.google.com/macros/s/AKfycbylX52Je28uc7C4d5OeoLA2b-P-3FpDAIqPfXTTjUHhQ6Murl9E6zj3Uy1KHayvAvAvoA/exec";
 
 // Hàm tìm thông tin người dùng dựa vào UID
 UserInfo* findUserByUID(String uid) {
@@ -142,7 +140,6 @@ void loop() {
     return;
   }
 
-  // Xử lý chuỗi UID
   String uidString = "";
   for (byte i = 0; i < mfrc522.uid.size; i++) {
     if (mfrc522.uid.uidByte[i] < 0x10) uidString += "0";
@@ -153,95 +150,54 @@ void loop() {
   Serial.print("RFID Card UID: ");
   Serial.println(uidString);
 
-  // Tìm người dùng
   UserInfo* userInfo = findUserByUID(uidString);
 
+  String requestURL = "";
+
   if (userInfo != NULL) {
-    // Kiểm tra nếu là thẻ hợp lệ theo logic cũ
-    if (checkValidCard()) {
-      lockDoor(); // Gọi xử lý đóng cửa và đợi chuyển động
-    }
-
-    // Gửi request nếu có kết nối WiFi
-    String requestURL = buildDynamicURL(*userInfo);
-    Serial.print("Requesting URL: ");
-    Serial.println(requestURL);
-
-    if (WiFi.status() == WL_CONNECTED) {
-      HTTPClient http;
-      http.begin(requestURL);
-      int httpCode = http.GET();
-
-      if (httpCode > 0) {
-        String response = http.getString();
-        Serial.print("Response: ");
-        Serial.println(response);
-      } else {
-        Serial.print("HTTP Request failed: ");
-        Serial.println(http.errorToString(httpCode));
-      }
-
-      http.end();
-    } else {
-      Serial.println("WiFi not connected");
-    }
-
-    delay(2000);
+    // Gửi dữ liệu đầy đủ nếu UID trùng
+    requestURL = buildDynamicURL(*userInfo);
+    lcd.clear();
+    lcd.print("Welcome, ");
+    lcd.setCursor(0, 1);
+    lcd.print(userInfo->ten);
+    lockDoor();
   } else {
-  Serial.println("Unknown UID. Sending to server...");
+    // Gửi UID mới nếu không tìm thấy
+    requestURL = baseURL + "?sts=new&uid=" + URLEncode(uidString);
+    lcd.clear();
+    lcd.print("! UNKNOWN CARD !");
+    Deniedbuzz(3);
+    delay(1000);
+    lcd.clear();
+    lcd.print("SCAN YOUR TOLL CARD");
+  }
 
-  // Gửi UID chưa biết lên Google Sheets
-  String unknownURL = baseURL + "?sts=new&uid=" + URLEncode(uidString);
-  
+  // Gửi dữ liệu lên server
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
-    http.begin(unknownURL);
+    http.begin(requestURL);
     int httpCode = http.GET();
 
     if (httpCode > 0) {
       String response = http.getString();
-      Serial.println("Response (unregistered): " + response);
+      Serial.print("Response: ");
+      Serial.println(response);
     } else {
-      Serial.println("Failed to send unregistered UID.");
+      Serial.print("HTTP Request failed: ");
+      Serial.println(http.errorToString(httpCode));
     }
 
     http.end();
+  } else {
+    Serial.println("WiFi not connected");
   }
-
-  // Hiển thị cảnh báo
-  lcd.clear();
-  lcd.print("! UNKNOWN CARD !");
-  Deniedbuzz(3);
-  delay(1000);
-  lcd.clear();
-  lcd.print("SCAN YOUR TOLL CARD");
-  delay(2000);
-}
-
 
   mfrc522.PICC_HaltA();
   mfrc522.PCD_StopCrypto1();
+  delay(2000);
 }
 
-
-bool checkValidCard() {
-  bool isName1 = true;
-  bool isName2 = true; 
-  for (byte i = 0; i < mfrc522.uid.size; i++) {
-    if (mfrc522.uid.uidByte[i] != Name1[i]) isName1 = false;
-    if (mfrc522.uid.uidByte[i] != Name2[i]) isName2 = false;
-  }
-  if (isName1) {
-    Name = "Vu Duc Thang";
-    Number = 23162095;
-    return true;
-  } else if (isName2) {
-    Name = "Nguyen Nhat Nam";
-    Number = 23162058;
-    return false;
-  }
-  return false;
-}
 
 void lockDoor() {
   isLocked = true;
@@ -251,7 +207,7 @@ void lockDoor() {
   Accessbuzz(1);
 
   unsigned long startTime = millis();
-  while (millis() - startTime < 3000) { 
+  while (millis() - startTime < 8000) { 
     if (detectMotion()) {
       Serial.println("Phát hiện chuyển động - Đóng cửa!");
       unlockDoor();
