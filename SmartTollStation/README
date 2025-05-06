@@ -1,3 +1,5 @@
 Hãy xem sơ đồ nối ở phần Circuits
 
 Trước khi nạp code, hãy đọc code tìm dòng code mà kết nối Wifi hãy đổi SSID và Password của nhà mình để Esp32 kết nối Wifi để hoạt động trơn tru khi quét rfid up lên database
+
+Truy cập đường link để xem database: https://docs.google.com/spreadsheets/d/1LsLwLyzuO-tm-DIN9rLOLietsEcqLWMuK2zscIfO39Y/edit?gid=262346773#gid=262346773
