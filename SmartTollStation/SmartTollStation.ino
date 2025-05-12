@@ -9,7 +9,6 @@
 #define RST_PIN 9
 #define BUZZER_PIN 6
 #define RELAY_PIN 4
-#define PIR_PIN 5
 
 #define I2C_SDA 3
 #define I2C_SCL 1
@@ -43,8 +42,8 @@ UserInfo users[] = {
 };
 
 // Thông tin WiFi
-const char* ssid = "CauBeButChi";         // Thay bằng tên WiFi của bạn
-const char* password = "14052005";        // Thay bằng mật khẩu WiFi của bạn
+const char* ssid = "PHAKE COFFEE 1";         // Thay bằng tên WiFi của bạn
+const char* password = "phake789";        // Thay bằng mật khẩu WiFi của bạn
 
 // URL cơ sở của Google Apps Script
 const String baseURL = "https://script.google.com/macros/s/AKfycbylX52Je28uc7C4d5OeoLA2b-P-3FpDAIqPfXTTjUHhQ6Murl9E6zj3Uy1KHayvAvAvoA/exec";
@@ -95,7 +94,7 @@ void setup() {
   mfrc522.PCD_Init();
 
   // Khởi tạo I2C LCD với chân custom
-  Wire.begin(I2C_SDA, I2C_SCL, 100000); 
+  Wire.begin(I2C_SDA, I2C_SCL, 10000000); 
 
   // Kết nối Wifi
   WiFi.begin(ssid, password);
@@ -120,7 +119,6 @@ void setup() {
   // Khởi tạo chân
   pinMode(BUZZER_PIN, OUTPUT);
   pinMode(RELAY_PIN, OUTPUT);
-  pinMode(PIR_PIN, INPUT);
   digitalWrite(RELAY_PIN, LOW);
 
   // Báo hiệu khởi động xong
@@ -205,21 +203,10 @@ void lockDoor() {
   lcd.clear();
   lcd.print("! PLEASE CONTINUE !");
   Accessbuzz(1);
-
-  unsigned long startTime = millis();
-  while (millis() - startTime < 8000) { 
-    if (detectMotion()) {
-      Serial.println("Phát hiện chuyển động - Đóng cửa!");
-      unlockDoor();
-      return;
-    }
-    delay(2000); 
-  }
+  delay(5000);
+  unlockDoor();
 }
 
-bool detectMotion() {
-  return (digitalRead(PIR_PIN) == HIGH);
-}
 
 void unlockDoor() {
   isLocked = false;
